@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
+using AzureMonitor.ConfigModels;
 using Microsoft.Identity.Client;
 using AzureMonitor.Helper;
 using AzureMonitor.Responses;

@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using AzureMonitor.ConfigModels;
+using AzureMonitor.Responses;
 using AzureMonitor.Services;
 
 namespace AzureMonitor
 {
-    class Program
+    internal class Program
     {
         static void Main(string[] args)
         {
@@ -31,18 +34,8 @@ namespace AzureMonitor
 
             var alerts = await AlertsService.GetAlerts(app, config);
             var recommendations = await AdvisorRecommendationsService.GetAdvisorRecommendations(app, config);
+            var securityRecommendations = recommendations.Recommendations
+                .Where(r => r.Properties.Category == Category.Security).ToList();
         }
-
-        /// <summary>
-        /// Display the result of the Web API call
-        /// </summary>
-        /// <param name="result">Object to display</param>
-        //private static void Display(JObject result)
-        //{
-        //    foreach (JProperty child in result.Properties().Where(p => !p.Name.StartsWith("@")))
-        //    {
-        //        Console.WriteLine($"{child.Name} = {child.Value}");
-        //    }
-        //}
     }
 }

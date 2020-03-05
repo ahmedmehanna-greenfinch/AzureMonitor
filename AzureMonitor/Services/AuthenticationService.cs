@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using AzureMonitor.ConfigModels;
 using Microsoft.Identity.Client;
 
 namespace AzureMonitor.Services
@@ -44,7 +45,7 @@ namespace AzureMonitor.Services
                 result = await app.AcquireTokenForClient(scopes)
                     .ExecuteAsync();
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("Token acquired");
+                Console.WriteLine("Token acquired for scopes: " + string.Join(',', scopes));
                 Console.ResetColor();
             }
             catch (MsalServiceException ex) when (ex.Message.Contains("AADSTS70011"))
