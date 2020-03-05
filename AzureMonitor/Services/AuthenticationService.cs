@@ -19,17 +19,17 @@ namespace AzureMonitor.Services
 
             if (isUsingClientSecret)
             {
-                app = ConfidentialClientApplicationBuilder.Create(config.ClientId)
-                    .WithClientSecret(config.ClientSecret)
-                    .WithAuthority(new Uri(config.Authority))
+                app = ConfidentialClientApplicationBuilder.Create(config.AzureConfig.ClientId)
+                    .WithClientSecret(config.AzureConfig.ClientSecret)
+                    .WithAuthority(new Uri(config.AzureConfig.Authority))
                     .Build();
             }
             else
             {
-                X509Certificate2 certificate = ReadCertificate(config.CertificateName);
-                app = ConfidentialClientApplicationBuilder.Create(config.ClientId)
+                X509Certificate2 certificate = ReadCertificate(config.AzureConfig.CertificateName);
+                app = ConfidentialClientApplicationBuilder.Create(config.AzureConfig.ClientId)
                     .WithCertificate(certificate)
-                    .WithAuthority(new Uri(config.Authority))
+                    .WithAuthority(new Uri(config.AzureConfig.Authority))
                     .Build();
             }
 
@@ -68,12 +68,12 @@ namespace AzureMonitor.Services
         /// <returns></returns>
         private static bool AppUsesClientSecret(AppConfig config)
         {
-            if (!string.IsNullOrWhiteSpace(config.ClientSecret))
+            if (!string.IsNullOrWhiteSpace(config.AzureConfig.ClientSecret))
             {
                 return true;
             }
 
-            if (!string.IsNullOrWhiteSpace(config.CertificateName))
+            if (!string.IsNullOrWhiteSpace(config.AzureConfig.CertificateName))
             {
                 return false;
             }

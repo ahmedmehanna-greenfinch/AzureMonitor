@@ -18,7 +18,7 @@ namespace AzureMonitor.Services
             {
                 var httpClient = new HttpClient();
                 var apiCaller = new ProtectedApiCallHelper(httpClient);
-                var url = config.AlertsConfig.GetFullUrl(config.SubscriptionId);
+                var url = config.AlertsConfig.GetFullUrl(config.AzureConfig.SubscriptionId);
                 var jsonResponse = await apiCaller.CallWebApiAndProcessResultASync(url, result.AccessToken);
 
                 if (jsonResponse != null)
