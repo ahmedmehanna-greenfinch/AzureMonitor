@@ -1,26 +1,35 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
-using AzureMonitor.ConfigModels;
 using Microsoft.Identity.Client;
 using AzureMonitor.Helper;
+using AzureMonitor.Interfaces;
 using AzureMonitor.Responses;
 using Newtonsoft.Json;
 
 namespace AzureMonitor.Services
 {
-    public static class AdvisorRecommendationsService
+    public class AdvisorRecommendationsService: IAdvisorRecommendationsService
     {
+        private readonly IAppConfigService _appConfigService;
+        private readonly IConfidentialClientApplication _app;
 
-        public static async Task<RecommendationsResponse> GetAdvisorRecommendations(IConfidentialClientApplication app, AppConfig config)
+        public AdvisorRecommendationsService(IAuthenticationService authenticationService, IAppConfigService appConfigService)
         {
+            _appConfigService = appConfigService;
+            _app = authenticationService.GetAzureConfidentialClientApplication();
+        }
 
-            var result = await AuthenticationService.AcquireTokenForClient(app, config.RecommendationsConfig.Scopes);
+        public async Task<RecommendationsResponse> GetAllRecommendations()
+        {
+            var result = await AuthenticationService.AcquireAzureTokenForClient(_app, _appConfigService.Config.RecommendationsConfig.Scopes);
 
             if (result != null)
             {
                 var httpClient = new HttpClient();
                 var apiCaller = new ProtectedApiCallHelper(httpClient);
-                var url = config.RecommendationsConfig.GetFullUrl(config.AzureConfig.SubscriptionId);
+                var url = _appConfigService.Config.RecommendationsConfig.GetFullUrl(_appConfigService.Config.AzureConfig.SubscriptionId);
                 var jsonResponse = await apiCaller.CallWebApiAndProcessResultASync(url, result.AccessToken);
 
                 if (jsonResponse != null)
@@ -32,6 +41,16 @@ namespace AzureMonitor.Services
             }
 
             return null;
+        }
+
+        public async Task<List<Recommendations>> GetSecurityRecommendations()
+        {
+            var recommendations = await GetAllRecommendations();
+
+            var securityRecommendations = recommendations.Recommendations
+                .Where(r => r.Properties.Category == Category.Security).ToList();
+
+            return securityRecommendations;
         }
     }
 }

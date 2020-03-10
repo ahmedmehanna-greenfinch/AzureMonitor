@@ -2,41 +2,58 @@
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Atlassian.Jira;
 using AzureMonitor.ConfigModels;
+using AzureMonitor.Interfaces;
 using Microsoft.Identity.Client;
 
 namespace AzureMonitor.Services
 {
-    public static class AuthenticationService
+    public class AuthenticationService: IAuthenticationService
     {
-        public static IConfidentialClientApplication GetConfidentialClientApplication(AppConfig config)
+        private IAppConfigService _appConfigService;
+
+        public AuthenticationService(IAppConfigService appConfigService)
+        {
+            _appConfigService = appConfigService;
+        }
+
+        public IConfidentialClientApplication GetAzureConfidentialClientApplication()
         {
             // You can run this sample using ClientSecret or Certificate. The code will differ only when instantiating the IConfidentialClientApplication
-            bool isUsingClientSecret = AuthenticationService.AppUsesClientSecret(config);
+            bool isUsingClientSecret = AuthenticationService.AppUsesClientSecret(_appConfigService.Config);
 
             // Even if this is a console application here, a daemon application is a confidential client application
             IConfidentialClientApplication app;
 
             if (isUsingClientSecret)
             {
-                app = ConfidentialClientApplicationBuilder.Create(config.AzureConfig.ClientId)
-                    .WithClientSecret(config.AzureConfig.ClientSecret)
-                    .WithAuthority(new Uri(config.AzureConfig.Authority))
+                app = ConfidentialClientApplicationBuilder.Create(_appConfigService.Config.AzureConfig.ClientId)
+                    .WithClientSecret(_appConfigService.Config.AzureConfig.ClientSecret)
+                    .WithAuthority(new Uri(_appConfigService.Config.AzureConfig.Authority))
                     .Build();
             }
             else
             {
-                X509Certificate2 certificate = ReadCertificate(config.AzureConfig.CertificateName);
-                app = ConfidentialClientApplicationBuilder.Create(config.AzureConfig.ClientId)
+                X509Certificate2 certificate = ReadCertificate(_appConfigService.Config.AzureConfig.CertificateName);
+                app = ConfidentialClientApplicationBuilder.Create(_appConfigService.Config.AzureConfig.ClientId)
                     .WithCertificate(certificate)
-                    .WithAuthority(new Uri(config.AzureConfig.Authority))
+                    .WithAuthority(new Uri(_appConfigService.Config.AzureConfig.Authority))
                     .Build();
             }
 
             return app;
         }
 
-        public static async Task<AuthenticationResult> AcquireTokenForClient(IConfidentialClientApplication app, string[] scopes)
+        public static Jira GetJiraClientApplication(AppConfig config)
+        {
+            var jira = Jira.CreateRestClient(config.JiraConfig.Endpoint, config.JiraConfig.Username,
+                config.JiraConfig.Password);
+
+            return jira;
+        }
+
+        public static async Task<AuthenticationResult> AcquireAzureTokenForClient(IConfidentialClientApplication app, string[] scopes)
         {
             AuthenticationResult result = null;
 

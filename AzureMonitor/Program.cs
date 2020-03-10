@@ -1,19 +1,39 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using AzureMonitor.ConfigModels;
-using AzureMonitor.Responses;
+using AzureMonitor.Interfaces;
 using AzureMonitor.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace AzureMonitor
 {
     internal class Program
     {
+        public static ServiceProvider ServiceProvider;
+        public static ILogger<Program> Log;
+
         static void Main(string[] args)
         {
             try
             {
+                //setup our DI
+                ServiceProvider = new ServiceCollection()
+                    .AddLogging()
+                    .AddSingleton<IAuthenticationService, AuthenticationService>()
+                    .AddSingleton<IAppConfigService, AppConfigService>()
+                    .AddSingleton<IAlertsService, AlertsService>()
+                    .AddSingleton<IAdvisorRecommendationsService, AdvisorRecommendationsService>()
+                    .AddSingleton<IJiraService, JiraService>()
+                    .AddSingleton<IBatchProcessService, BatchProcessService>()
+                    .BuildServiceProvider();
+
+                Log = ServiceProvider.GetService<ILoggerFactory>().CreateLogger<Program>();
+
+                Log.LogDebug("Starting application");
+
                 RunAsync().GetAwaiter().GetResult();
+
+                Log.LogDebug("All done!");
             }
             catch (Exception ex)
             {
@@ -28,14 +48,23 @@ namespace AzureMonitor
 
         private static async Task RunAsync()
         {
-            AppConfig config = AppConfig.ReadFromJsonFile("appsettings.json");
+            //var alertService = ServiceProvider.GetService<IAlertsService>();
+            //var recommendationsService = ServiceProvider.GetService<IAdvisorRecommendationsService>();
+            var batchProcessService = ServiceProvider.GetService<IBatchProcessService>();
 
-            var app = AuthenticationService.GetConfidentialClientApplication(config);
+            //var alerts = await alertService.GetAlerts();
+            //var securityRecommendations = await recommendationsService.GetSecurityRecommendations();
 
-            var alerts = await AlertsService.GetAlerts(app, config);
-            var recommendations = await AdvisorRecommendationsService.GetAdvisorRecommendations(app, config);
-            var securityRecommendations = recommendations.Recommendations
-                .Where(r => r.Properties.Category == Category.Security).ToList();
+            var projectId = "Transom (Mainstay)";
+            var epicKey = "MAIN-5733";
+
+            //var epices = await batchProcessService.ProcessEpics(projectId);
+
+            var issues = await batchProcessService.ProcessIssuesUnderEpic(epicKey, projectId);
+
+            //var issuesWithoutEpic = await batchProcessService.ProcessIssuesWithoutEpic(projectId);
+
         }
+
     }
 }
